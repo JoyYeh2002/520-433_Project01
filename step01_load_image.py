@@ -3,16 +3,14 @@ EN.520.433 Medical Image Analysis
 Spring 2023
 
 Step01: Image loading and display
+Load all the given data and display the images in subplots
 
-Updated 05.03.2023
+Updated 05.05.2023
 
 Joy Yeh
 '''
-
 import SimpleITK as sitk
-import numpy as np
 import matplotlib.pylab as plt
-
 
 # 0. Basic Control Panel
 patient_idx = 5
@@ -78,7 +76,6 @@ if display_markings == True:
     plt.setp(axs, xticks=[], yticks=[])
     plt.suptitle('Patient {0}, {1} sequence'.format(patient_idx, heartbeat_state))
     plt.show()
-
 
 if display_sequence == True:
     # construct the filename based on the channel_number
