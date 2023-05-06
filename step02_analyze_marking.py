@@ -18,7 +18,7 @@ import scipy.ndimage as ndi
 import cv2
 
 # 0. Basic Control Panel
-patient_idx = 10
+patient_idx = 5
 heartbeat_state = 'ES'  # set to 'ED' or 'ES' to load the corresponding files
 folder_name = "data/patient" + str(patient_idx).zfill(4) + "/"
 display_markings = True
@@ -57,29 +57,50 @@ if display_markings == True:
     otsu_thresh, otsu_img = cv2.threshold(masked_img[0], 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     print(otsu_img.shape)
 
-    # create a subplot with three images
-    fig, axs = plt.subplots(1, 4, figsize=(10, 5))
-    axs[0].imshow(I_2ch[0], cmap='gray')
-    axs[1].imshow(mask[0], cmap='gray')
-    axs[2].imshow(masked_img[0], cmap='gray')
-    axs[3].imshow(otsu_img, cmap='gray')
+    # Apply maximum thresholding within a certain percentage of the max img intensity
+    # mthresh01 = 150
+    # mthresh02 = 120
 
-    axs[0].set_title('Original Image')
-    axs[1].set_title('Binary Mask')
-    axs[2].set_title('Masked Image')
-    axs[3].set_title('Otsu on the masked image')
+    thresh_percent01 = 0.3
+    mthresh01 = int(np.max(I) * thresh_percent01)
 
-    # remove the ticks from the subplots
-    for ax in axs:
-        ax.set_xticks([])
-        ax.set_yticks([])
-
-    print('HELLO')
-    plt.show()
+    thresh_percent02 = 0.4
+    mthresh02 = int(np.max(I) * thresh_percent02)
     
-    # [THESE ARE AFTER THE BREAKPOINT]
-    cont = False
-    if cont== True:
+    # compute the median value of the filtered image
+    median_val = np.median(masked_img[0])
+
+    # apply thresholding based on the median value
+    thresh_range = 2.9 # set the threshold value as a percentage of the median value
+
+
+    thresh_value = np.median(masked_img[0]) *thresh_range # subtract 10 from the maximum pixel intensity value
+    ret, thresh01 = cv2.threshold(masked_img[0], thresh_value, 255, cv2.THRESH_BINARY)
+
+    # create a subplot with three images
+    display_these = False
+    if display_these == True:
+        fig, axs = plt.subplots(1, 4, figsize=(10, 5))
+        axs[0].imshow(I_2ch[0], cmap='gray')
+        axs[1].imshow(mask[0], cmap='gray')
+        axs[2].imshow(masked_img[0], cmap='gray')
+        axs[3].imshow(thresh01, cmap='gray')
+
+        axs[0].set_title('Original Image')
+        axs[1].set_title('Binary Mask')
+        axs[2].set_title('Masked Image')
+        axs[3].set_title('thresh')
+
+        # remove the ticks from the subplots
+        for ax in axs:
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+        plt.show()
+    
+
+    display_comparisons = True
+    if display_comparisons == True:
         # apply a Gaussian filter with a standard deviation of 2 in the x and y dimensions, and 1 in the z dimension
         sigma = (5, 5, 1)
         gaussian_filtered = ndi.gaussian_filter(I, sigma)
@@ -97,7 +118,7 @@ if display_markings == True:
         contrasted = exposure.rescale_intensity(denoised, in_range=(p2, p98))
 
         # create a subplot with three images
-        fig, axs = plt.subplots(1, 4, figsize=(10, 5))
+        fig, axs = plt.subplots(1, 5, figsize=(10, 5))
 
         # display the original image in the first subplot
         axs[0].imshow(I_2ch[0], cmap='gray')
@@ -105,16 +126,25 @@ if display_markings == True:
 
         # display the filtered image in the second subplot
         axs[1].imshow(denoised[0], cmap='gray')
-        axs[1].set_title('Filt + Denoise')
+        axs[1].set_title('Filt + Denoise', fontsize=10)
 
-        axs[2].imshow(binary[0], cmap='gray')
-        axs[2].set_title('Contrast enhanced')
+        # Apply maximum thresholding
+        thresh_value = np.max(denoised[0]) - mthresh02 # subtract 10 from the maximum pixel intensity value
+        ret, thresh_img = cv2.threshold(denoised[0], thresh_value, 255, cv2.THRESH_BINARY)
 
-        # display the gt
-        axs[3].imshow(I_2ch_gt[0], cmap='gray')
-        axs[3].set_title('Labels')
+        # Display max thresh org
+        axs[2].imshow(thresh01, cmap='gray')
+        axs[2].set_title('Og thresh = {0}, {1}'.format(mthresh01, thresh_range), fontsize=10)
 
-        # set the title of the figure
+        # Display max thresh smoothed
+        axs[3].imshow(thresh_img, cmap='gray')
+        axs[3].set_title('Enc thresh = {0}, {1}%'.format(mthresh02, thresh_percent02*100), fontsize=10)
+
+        # display the gt labels
+        axs[4].imshow(I_2ch_gt[0], cmap='gray')
+        axs[4].set_title('Labels', fontsize=10)
+
+        # Set the title of the figure
         plt.suptitle('Patient {0}, {1}CH Sequence'.format(patient_idx, channel_number))
 
         # remove the ticks from the subplots
@@ -123,6 +153,7 @@ if display_markings == True:
             ax.set_yticks([])
 
         # display the figure
+    
         plt.show()
     
     display = False
