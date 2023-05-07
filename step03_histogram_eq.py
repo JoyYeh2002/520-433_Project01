@@ -18,9 +18,14 @@ import scipy.ndimage as ndi
 import cv2
 
 # 0. Basic Control Panel
-patient_idx = 5
+patient_idx01 = 1
+patient_idx02 = 5
+
 heartbeat_state = 'ES'  # set to 'ED' or 'ES' to load the corresponding files
-folder_name = "data/patient" + str(patient_idx).zfill(4) + "/"
+
+folder_name01 = "data/patient" + str(patient_idx01).zfill(4) + "/"
+folder_name02 = "data/patient" + str(patient_idx02).zfill(4) + "/"
+
 display_markings = True
 display_sequence = False
 channel_number = 2
@@ -30,67 +35,57 @@ loop_idx = range(1, 36, 4)
 
 # 1. Open the .cfg file
 cfg_name = 'Info_{0}CH.cfg'.format(channel_number)
-with open(folder_name + cfg_name, 'r') as f:
+
+with open(folder_name01 + cfg_name, 'r') as f:
+    # Read the lines of the file into a list
+    lines = f.readlines()
+
+with open(folder_name02 + cfg_name, 'r') as f:
     # Read the lines of the file into a list
     lines = f.readlines()
 
 if display_markings == True:
     # construct the filenames based on the heartbeat_state
-    mhp_2ch = 'patient{0:04d}_2CH_{1}.mhd'.format(patient_idx, heartbeat_state)
-    mhp_2ch_gt = 'patient{0:04d}_2CH_{1}_gt.mhd'.format(patient_idx, heartbeat_state)
+    mhp01 = 'patient{0:04d}_2CH_{1}.mhd'.format(patient_idx01, heartbeat_state)
+    mhp02 = 'patient{0:04d}_2CH_{1}.mhd'.format(patient_idx02, heartbeat_state)
 
     # load the images and ground truth files
-    I_2ch = sitk.GetArrayFromImage(sitk.ReadImage(folder_name + mhp_2ch, sitk.sitkFloat32))
-    I_2ch_gt = sitk.GetArrayFromImage(sitk.ReadImage(folder_name + mhp_2ch_gt, sitk.sitkFloat32))
+    I1 = sitk.GetArrayFromImage(sitk.ReadImage(folder_name01 + mhp01, sitk.sitkFloat32))
+    I2 = sitk.GetArrayFromImage(sitk.ReadImage(folder_name02 + mhp02, sitk.sitkFloat32))
     
-    I = I_2ch
-
-    # create a binary mask where 0 indicates pixels to ignore
-    mask = np.where(I == 0, 0, 1)
-
-    # apply the mask to the image
-    masked_img = I * mask
-    masked_img = masked_img.astype(np.uint16)
-    I_2ch = I_2ch.astype(np.uint16)
-
-    I = masked_img
-
     # Draw the histogram, excluding 0's
     # Compute the histogram of the non-zero pixel values
-    hist, bins = np.histogram(I[I != 0], bins=256, range=[0, 256])
-
-    # Compute the weighted average of the histogram bin values
+    hist, bins = np.histogram(I2[I2 != 0], bins=256, range=[0, 256])
     avg_intensity = np.average(bins[:-1], weights=hist)
 
-    # Plot the histogram using Matplotlib's plt.bar function
-    plt.bar(bins[:-1], hist, width=1)
+    show_histogram = False
+    if show_histogram == True:
+        plt.bar(bins[:-1], hist, width=1)
+        plt.axvline(x=avg_intensity, color='red')
 
-    # Plot the average intensity as a red vertical line
-    plt.axvline(x=avg_intensity, color='red')
+        plt.suptitle('Patient {0}, {1} sequence Raw Histogram'.format(patient_idx02, heartbeat_state))
+        plt.ylim([0, 7000])
+        plt.show()
+    
+    # Add 100 intensity
+    I = I2
+    I2[I2 != 0] += 100
 
-    plt.suptitle('Patient {0}, {1} sequence Raw Histogram'.format(patient_idx, heartbeat_state))
-    plt.ylim([0, 7000])
-    plt.show()
+    # Clip the pixel values to the range [0, 255]
+    img = np.clip(I2, 0, 255)
 
-
-    show_4_subplots = False
+    show_4_subplots = True
     if show_4_subplots == True:
-        # apply Otsu's method to the masked image
-        otsu_thresh, otsu_img = cv2.threshold(masked_img[0], 100, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        print(otsu_img.shape)
-
         # create a subplot with three images
-        fig, axs = plt.subplots(1, 4, figsize=(10, 5))
-        axs[0].imshow(I_2ch[0], cmap='gray')
-        axs[1].imshow(mask[0], cmap='gray')
-        axs[2].imshow(masked_img[0], cmap='gray')
-        axs[3].imshow(otsu_img, cmap='gray')
-
+        fig, axs = plt.subplots(1, 3, figsize=(10, 5))
+        axs[0].imshow(I[0], cmap='gray')
+        axs[1].imshow(img[0], cmap='gray')
+        axs[2].imshow(I1[0], cmap = 'gray')
+        
         axs[0].set_title('Original Image')
-        axs[1].set_title('Binary Mask')
-        axs[2].set_title('Masked Image')
-        axs[3].set_title('Otsu on the masked image')
-
+        axs[1].set_title('Brightened')
+        axs[2].set_title('Patient 1')
+       
         # remove the ticks from the subplots
         for ax in axs:
             ax.set_xticks([])
