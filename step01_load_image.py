@@ -13,11 +13,11 @@ import SimpleITK as sitk
 import matplotlib.pylab as plt
 
 # 0. Basic Control Panel
-patient_idx = 5
+patient_idx = 25
 heartbeat_state = 'ES'  # set to 'ED' or 'ES' to load the corresponding files
 folder_name = "data/patient" + str(patient_idx).zfill(4) + "/"
-display_markings = False
-display_sequence = True
+display_markings = True
+display_sequence = False
 channel_number = 4
 
 # 1. Open the .cfg file
