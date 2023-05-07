@@ -72,7 +72,6 @@ if display_markings == True:
     plt.ylim([0, 7000])
     plt.show()
 
-
     show_4_subplots = False
     if show_4_subplots == True:
         # apply Otsu's method to the masked image
