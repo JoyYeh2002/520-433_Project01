@@ -58,19 +58,34 @@ if display_markings == True:
     contrasted01 = exposure.equalize_hist(I1[0], nbins=256)
     contrasted02 = exposure.equalize_hist(I2[0], nbins=256)
 
+    con03 = exposure.equalize_hist(I1[0], nbins=128)
+    con04 = exposure.equalize_hist(I1[0], nbins=64)
+    con05 = exposure.equalize_hist(I1[0], nbins=16)
+
     show_4_subplots = True
     if show_4_subplots == True:
         # create a subplot with three images
         fig, axs = plt.subplots(1, 4, figsize=(10, 5))
-        axs[0].imshow(I1[0], cmap = 'gray')
-        axs[1].imshow(contrasted01, cmap = 'gray')
-        axs[2].imshow(I2[0], cmap='gray')
-        axs[3].imshow(contrasted02, cmap = 'gray')
+
+        axs[0].imshow(contrasted01, cmap = 'gray')
+        axs[1].imshow(con03, cmap = 'gray')
+        axs[2].imshow(con04, cmap='gray')
+        axs[3].imshow(con05, cmap = 'gray')
         
-        axs[0].set_title('P#{0}Orig'.format(patient_idx01))
-        axs[1].set_title('P1 Enhanced')
-        axs[2].set_title('P#{0}Orig'.format(patient_idx02))
-        axs[3].set_title('P2 Enhanced')
+        axs[0].set_title('256')
+        axs[1].set_title('128')
+        axs[2].set_title('64')
+        axs[3].set_title('16')
+
+        # axs[0].imshow(I1[0], cmap = 'gray')
+        # axs[1].imshow(contrasted01, cmap = 'gray')
+        # axs[2].imshow(I2[0], cmap='gray')
+        # axs[3].imshow(contrasted02, cmap = 'gray')
+        
+        # axs[0].set_title('P#{0}Orig'.format(patient_idx01))
+        # axs[1].set_title('P1 Enhanced')
+        # axs[2].set_title('P#{0}Orig'.format(patient_idx02))
+        # axs[3].set_title('P2 Enhanced')
       
         # remove the ticks from the subplots
         for ax in axs:
