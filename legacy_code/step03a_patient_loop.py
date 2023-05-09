@@ -26,8 +26,6 @@ heartbeat_state = 'ES'  # set to 'ED' or 'ES' to load the corresponding files
 folder_name = []
 for i in range(len(patient_idx)):
     folder_name.append("data/patient" + str(patient_idx[i]).zfill(4) + "/")
-# folder_name01 = "data/patient" + str(patient_idx01).zfill(4) + "/"
-# folder_name02 = "data/patient" + str(patient_idx02).zfill(4) + "/"
 
 display_markings = True
 display_sequence = False
@@ -44,19 +42,13 @@ for i in range(len(folder_name)):
         # Read the lines of the file into a list
         lines = f.readlines()
 
-# with open(folder_name02 + cfg_name, 'r') as f:
-#     # Read the lines of the file into a list
-#     lines = f.readlines()
-
 display_markings = True
 if display_markings == True:
     # construct the filenames based on the heartbeat_state
     mhp_arr = []
     for i in range(len(patient_idx)):
         mhp_arr.append('patient{0:04d}_2CH_{1}.mhd'.format(patient_idx[i], heartbeat_state))
-    # mhp01 = 'patient{0:04d}_2CH_{1}.mhd'.format(patient_idx01, heartbeat_state)
-    # mhp02 = 'patient{0:04d}_2CH_{1}.mhd'.format(patient_idx02, heartbeat_state)
-
+   
     # load the images and ground truth files
     im_arr = []
     contrast_arr = []
@@ -64,11 +56,7 @@ if display_markings == True:
         im_arr.append(sitk.GetArrayFromImage(sitk.ReadImage(folder_name[i] + mhp_arr[i], sitk.sitkFloat32)))
         # Linearly scale the pixel values to the range [0, 255]
         contrast_arr.append(exposure.equalize_hist(im_arr[i][0], nbins=256))
-    # I1 = sitk.GetArrayFromImage(sitk.ReadImage(folder_name01 + mhp01, sitk.sitkFloat32))
-    # I2 = sitk.GetArrayFromImage(sitk.ReadImage(folder_name02 + mhp02, sitk.sitkFloat32))
-    # contrasted01 = exposure.equalize_hist(I1[0], nbins=256)
-    # contrasted02 = exposure.equalize_hist(I2[0], nbins=256)
-
+  
     show_4_subplots = True
     if show_4_subplots == True:
         # create a subplot with three images
@@ -79,17 +67,11 @@ if display_markings == True:
             axs[i//len(im_arr), i%len(im_arr)].imshow(im_arr[count][0], cmap = 'gray')
             axs[i//len(im_arr), i%len(im_arr)+1].imshow(contrast_arr[count], cmap = 'gray')
             print(i)
-            # axs[2].imshow(I2[0], cmap='gray')
-            # axs[3].imshow(contrasted02, cmap = 'gray')
+           
             axs[i//len(im_arr), i%len(im_arr)].set_title('P#{0}Orig'.format(patient_idx[count]))
             axs[i//len(im_arr), i%len(im_arr)+1].set_title('P{0} Enhanced'.format(patient_idx[count]))
             count+=1
         
-        # axs[0].set_title('P#{0}Orig'.format(patient_idx01))
-        # axs[1].set_title('P1 Enhanced')
-        # axs[2].set_title('P#{0}Orig'.format(patient_idx02))
-        # axs[3].set_title('P2 Enhanced')
-      
         # remove the ticks from the subplots
         for arow in axs:
             for i in range(2):
