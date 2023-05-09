@@ -4,6 +4,6 @@ The left ventricle volume estimation and 3D reconstruction project for EE.520.43
 Hannah Qu, Huanying (Joy) Yeh
 
 # Updates
-05/09 Decided on image pre-processing design, ready to interface with ground truth markings
-05/06 Meet with Hannah to fix contrast enhancement issues and improve code workflow (for-loops)
-05/04 - 05/05 Data and image loading  
+1. 05/09 Decided on image pre-processing design, ready to interface with ground truth markings
+2. 05/06 Meet with Hannah to fix contrast enhancement issues and improve code workflow (for-loops)
+3. 05/04 - 05/05 Data and image loading  
