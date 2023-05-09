@@ -25,8 +25,6 @@ import cv2
 patient_idx = 25
 heartbeat_state = 'ED'  # set to 'ED' or 'ES' to load the corresponding files
 folder_name = "data/patient" + str(patient_idx).zfill(4) + "/"
-display_markings = True
-display_sequence = False
 channel_number = 2
 
 # 1. Open the .cfg file
@@ -37,8 +35,8 @@ with open(folder_name + cfg_name, 'r') as f:
     lines = f.readlines()
 
 # construct the filenames based on the heartbeat_state
-mhp01 = 'patient{0:04d}_2CH_{1}.mhd'.format(patient_idx, heartbeat_state)
-mhp01_gt = 'patient{0:04d}_2CH_{1}_gt.mhd'.format(patient_idx, heartbeat_state)
+mhp01 = 'patient{0:04d}_{1}CH_{2}.mhd'.format(patient_idx, channel_number, heartbeat_state)
+mhp01_gt = 'patient{0:04d}_{1}CH_{2}_gt.mhd'.format(patient_idx, channel_number, heartbeat_state)
 
 # load the images and ground truth files
 I1 = sitk.GetArrayFromImage(sitk.ReadImage(folder_name + mhp01, sitk.sitkFloat32))
@@ -48,8 +46,7 @@ I1_gt = sitk.GetArrayFromImage(sitk.ReadImage(folder_name + mhp01_gt, sitk.sitkF
 # 1. Contrast enhancement
 I1_c = exposure.equalize_hist(I1[0], nbins=256)
 
-# 2. Denoising
-# apply a Gaussian filter with a standard deviation of 2 in the x and y dimensions, and 1 in the z dimension
+# 2. Gaussion blurring
 sigma = (20, 20)
 g_filt01 = ndi.gaussian_filter(I1_c, sigma)
 
