@@ -2,7 +2,9 @@
 EN.520.433 Medical Image Analysis
 Spring 2023
 
-Step02: Package the pre-processing into a helper function, then test on a sequence
+Step03: Package the pre-processing into a helper function, then test on a sequence of images
+
+- Results are good! 
 
 Updated 05.09.2023
 
