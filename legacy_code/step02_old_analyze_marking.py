@@ -67,13 +67,8 @@ if display_markings == True:
     thresh_percent02 = 0.4
     mthresh02 = int(np.max(I) * thresh_percent02)
     
-    # compute the median value of the filtered image
-    median_val = np.median(masked_img[0])
-
     # apply thresholding based on the median value
     thresh_range = 2.9 # set the threshold value as a percentage of the median value
-
-
     thresh_value = np.median(masked_img[0]) *thresh_range # subtract 10 from the maximum pixel intensity value
     ret, thresh01 = cv2.threshold(masked_img[0], thresh_value, 255, cv2.THRESH_BINARY)
 
@@ -97,7 +92,6 @@ if display_markings == True:
             ax.set_yticks([])
 
         plt.show()
-    
 
     display_comparisons = True
     if display_comparisons == True:

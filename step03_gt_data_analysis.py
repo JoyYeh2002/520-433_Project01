@@ -52,10 +52,6 @@ fig, axs = plt.subplots(1, 4, figsize=(10, 5))
 
 for i in range(4):
     axs[i].imshow(binary[i][0], cmap='gray')
-# axs[0].imshow(I[0], cmap = 'gray')
-# axs[1].imshow(I_gt[0], cmap = 'gray')
-# axs[2].imshow(binary[0], cmap='gray')
-# axs[3].imshow(I_gt[0], cmap = 'gray')
 
 axs[0].set_title('P#{0} Binary1'.format(patient_idx))
 axs[1].set_title('P#{0} Binary2'.format(patient_idx))
