@@ -143,6 +143,8 @@ for tup in c1_4: # iterate through tuple
             max_b_4 = b
 print(current_max_4)
 
+# Dodge Estimate: V = (math.pi*L/6) * (pi*area_2/pi*current_max_2)*(2*area_4/pi*current_max_4)
+
 plot_seq_samples = False
 if plot_seq_samples == True:
     fig, axs = plt.subplots(1, int(len(I_seq_2)/2), figsize=(25, 25))
