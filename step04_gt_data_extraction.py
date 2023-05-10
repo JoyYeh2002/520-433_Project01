@@ -23,7 +23,7 @@ heartbeat_state = 'ES'  # set to 'ED' or 'ES' to load the corresponding files
 folder_name = "data/patient" + str(patient_idx).zfill(4) + "/"
 display_markings = True
 display_sequence = False
-channel_number = 2
+channel_number = 4
 
 # 1. Open the .cfg file
 cfg_name = 'Info_{0}CH.cfg'.format(channel_number)
