@@ -13,7 +13,7 @@ import SimpleITK as sitk
 import matplotlib.pylab as plt
 
 # 0. Basic Control Panel
-patient_idx = 25
+patient_idx = 20
 heartbeat_state = 'ES'  # set to 'ED' or 'ES' to load the corresponding files
 folder_name = "data/patient" + str(patient_idx).zfill(4) + "/"
 display_markings = True
