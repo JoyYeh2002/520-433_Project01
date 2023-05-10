@@ -19,7 +19,7 @@ from helper_functions import pre_process
 import time
 
 # 0. Load the variables from the pickle file
-patient_idx = 1
+patient_idx = 20
 channel_number = 2
 out_file_name = "outputs\pickles\patient{0:04d}_{1}_CH_evolution_variables.pkl".format(patient_idx, channel_number)
 
@@ -43,8 +43,8 @@ with open(out_file_name, "rb") as f:
 ''' Method 1: Brute-force segmentation with cartoons '''
 
 # Grab an image without markings 
-for idx in range(1): #(int(len(I_seq)/2)):
-    img = I_seq[idx]
+for idx in range(int(len(I_seq)/2)):
+    img = I_out# I_seq[idx]
     img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
     # Apply thresholding to create a binary image
@@ -53,9 +53,8 @@ for idx in range(1): #(int(len(I_seq)/2)):
         # Apply median filtering to remove small details
     filtered = cv2.medianBlur(img, 25)
 
-    f = filtered.copy()
     # Identify pixels with values between 30 and 100 and set them to 50
-
+    f = filtered.copy()
     thresh_low = 30
     thresh_high = 140
     f[(f >= thresh_low) & (f <= thresh_high)] = 50
@@ -65,19 +64,25 @@ for idx in range(1): #(int(len(I_seq)/2)):
     c = 2
     binary = cv2.adaptiveThreshold(filtered, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, \
                                     cv2.THRESH_BINARY, block_size, c)
+    
+    # Perform Canny edge detection
+    cthresh_low = 40
+    cthresh_high = 70
+    edges = cv2.Canny(filtered, cthresh_low, cthresh_high)
 
-    fig, axs = plt.subplots(1, 4)
+    fig, axs = plt.subplots(1, 2)
 
     # Plot the images on the subplots
     axs[0].imshow(I, cmap = 'gray')
-    axs[1].imshow(binary, cmap = 'gray')
-    axs[2].imshow(filtered, cmap = 'gray')
-    axs[3].imshow(f, cmap = 'gray')
+    # axs[1].imshow(filtered, cmap = 'gray')
+    axs[1].imshow(f, cmap = 'gray')
+    # axs[3].imshow(edges, cmap = 'gray')
 
     axs[0].set_title('P{0} Img'.format(patient_idx))
-    axs[1].set_title('block = {0}, c = {1}'.format(block_size, c))
-    axs[2].set_title('med blur = 25')
-    axs[3].set_title('thresh = {0}/{1}'.format(thresh_low, thresh_high))
+    #  axs[1].set_title('block = {0}, c = {1}'.format(block_size, c))
+    # axs[1].set_title('med blur = 25')
+    axs[1].set_title('thresh = {0}/{1}'.format(thresh_low, thresh_high))
+    # axs[3].set_title('canny {0}/{1}'.format(cthresh_low, cthresh_high))
 
     for ax in axs.flat:
         ax.set_xticks([])
