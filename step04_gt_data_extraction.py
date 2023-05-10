@@ -18,7 +18,7 @@ import numpy as np
 from helper_functions import pre_process
 
 # 0. Basic Control Panel
-patient_idx = 20
+patient_idx = 10
 heartbeat_state = 'ES'  # set to 'ED' or 'ES' to load the corresponding files
 folder_name = "data/patient" + str(patient_idx).zfill(4) + "/"
 display_markings = True

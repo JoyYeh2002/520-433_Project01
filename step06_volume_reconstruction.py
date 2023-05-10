@@ -2,12 +2,12 @@
 EN.520.433 Medical Image Analysis
 Spring 2023
 
-Step04: Get curvature and area information from the gt marking
-- Load the images, initial contours, and 
+Step06: Given the markings (r2) for channel 2 and 4, assume they are orthogonal, apply 
+a formula to calculate the bean sag shape volume
 
 Updated 05.09.2023
 
-Joy Yeh
+Hannah Qu
 '''
 
 import pickle
