@@ -16,9 +16,10 @@ import matplotlib.pylab as plt
 import cv2
 import numpy as np
 from helper_functions import pre_process
+import time
 
 # 0. Load the variables from the pickle file
-patient_idx = 20
+patient_idx = 1
 channel_number = 2
 out_file_name = "outputs\pickles\patient{0:04d}_{1}_CH_evolution_variables.pkl".format(patient_idx, channel_number)
 
@@ -28,6 +29,7 @@ with open(out_file_name, "rb") as f:
     lines = pickle.load(f)
 
     I = pickle.load(f)
+    I = I[0]
     I_gt = pickle.load(f)
     r2 = pickle.load(f) # the binary red contour (the most important one)
     
@@ -41,42 +43,50 @@ with open(out_file_name, "rb") as f:
 ''' Method 1: Brute-force segmentation with cartoons '''
 
 # Grab an image without markings 
-idx = 2
-img = I_seq[2]
+for idx in range(1): #(int(len(I_seq)/2)):
+    img = I_seq[idx]
+    img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
-# Apply bilateral filtering to create a cartoon-like effect
-filtered = cv2.bilateralFilter(img, 9, 75, 75)
+    # Apply thresholding to create a binary image
+    # _, binary = cv2.threshold(img, 160, 255, cv2.THRESH_BINARY)
 
-# Threshold the filtered image to create a binary image with white, gray, and black colors
-_, thresh = cv2.threshold(filtered, 50, 255, cv2.THRESH_BINARY)
+        # Apply median filtering to remove small details
+    filtered = cv2.medianBlur(img, 25)
 
-# Display the original image and the filtered image side by side
-cv2.imshow('Original Image', img)
-#  cv2.imshow('Filtered Image', filtered)
-cv2.imshow('Thresholded Image', thresh)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    f = filtered.copy()
+    # Identify pixels with values between 30 and 100 and set them to 50
+
+    thresh_low = 30
+    thresh_high = 140
+    f[(f >= thresh_low) & (f <= thresh_high)] = 50
+
+    # Apply adaptive thresholding to create a binary image with gray, black, and white regions
+    block_size = 21
+    c = 2
+    binary = cv2.adaptiveThreshold(filtered, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, \
+                                    cv2.THRESH_BINARY, block_size, c)
+
+    fig, axs = plt.subplots(1, 4)
+
+    # Plot the images on the subplots
+    axs[0].imshow(I, cmap = 'gray')
+    axs[1].imshow(binary, cmap = 'gray')
+    axs[2].imshow(filtered, cmap = 'gray')
+    axs[3].imshow(f, cmap = 'gray')
+
+    axs[0].set_title('P{0} Img'.format(patient_idx))
+    axs[1].set_title('block = {0}, c = {1}'.format(block_size, c))
+    axs[2].set_title('med blur = 25')
+    axs[3].set_title('thresh = {0}/{1}'.format(thresh_low, thresh_high))
+
+    for ax in axs.flat:
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    plt.show()
+
 
 ''' Not Currently Using '''
-# 1. Plot the original marking for sanity check
-plot_on_img = False
-if plot_on_img == True:
-    I_out = cv2.cvtColor(I_out, cv2.COLOR_GRAY2RGB)
-
-    # Set the color of the contour pixels to red in the RGB image
-    linewidth = 4
-    cv2.drawContours(I_out, c2, -1, (0, 255, 0), linewidth)
-    cv2.drawContours(I_out, c1, -1, (0, 0, 255), linewidth)
-    cv2.drawContours(I_out, c3, -1, (255, 0, 0), linewidth)
-
-    # Save the canvas with the contours in red
-    cv2.imwrite('outputs\snakes\patinet{0:04d}_{1}CH_contour_label.jpg'.format(patient_idx, channel_number), I_out)
-
-    # Display the canvas with the contour in red color
-    cv2.imshow('Contour Image', I_out)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
 plot_seq_samples = False
 if plot_seq_samples == True:
     fig, axs = plt.subplots(1, int(len(I_seq)/2), figsize=(25, 25))
