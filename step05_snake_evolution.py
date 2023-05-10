@@ -16,10 +16,11 @@ import matplotlib.pylab as plt
 import cv2
 import numpy as np
 from helper_functions import pre_process
+import time
 
 # 0. Load the variables from the pickle file
-patient_idx = 1
-channel_number = 4
+patient_idx = 20
+channel_number = 2
 out_file_name = "outputs\pickles\patient{0:04d}_{1}_CH_evolution_variables.pkl".format(patient_idx, channel_number)
 
 with open(out_file_name, "rb") as f:
@@ -28,6 +29,7 @@ with open(out_file_name, "rb") as f:
     lines = pickle.load(f)
 
     I = pickle.load(f)
+    I = I[0]
     I_gt = pickle.load(f)
     r2 = pickle.load(f) # the binary red contour (the most important one)
     
@@ -38,26 +40,59 @@ with open(out_file_name, "rb") as f:
     c2 = pickle.load(f)
     c3 = pickle.load(f)
 
-# 1. Plots for sanity check
-plot_on_img = False
-if plot_on_img == True:
-    I_out = cv2.cvtColor(I_out, cv2.COLOR_GRAY2RGB)
+''' Method 1: Brute-force segmentation with cartoons '''
 
-    # Set the color of the contour pixels to red in the RGB image
-    linewidth = 4
-    cv2.drawContours(I_out, c2, -1, (0, 255, 0), linewidth)
-    cv2.drawContours(I_out, c1, -1, (0, 0, 255), linewidth)
-    cv2.drawContours(I_out, c3, -1, (255, 0, 0), linewidth)
+# Grab an image without markings 
+for idx in range(int(len(I_seq)/2)):
+    img = I_out# I_seq[idx]
+    img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
-    # Save the canvas with the contours in red
-    cv2.imwrite('outputs\snakes\patinet{0:04d}_{1}CH_contour_label.jpg'.format(patient_idx, channel_number), I_out)
+    # Apply thresholding to create a binary image
+    # _, binary = cv2.threshold(img, 160, 255, cv2.THRESH_BINARY)
 
-    # Display the canvas with the contour in red color
-    cv2.imshow('Contour Image', I_out)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        # Apply median filtering to remove small details
+    filtered = cv2.medianBlur(img, 25)
 
-plot_seq_samples = True
+    # Identify pixels with values between 30 and 100 and set them to 50
+    f = filtered.copy()
+    thresh_low = 30
+    thresh_high = 140
+    f[(f >= thresh_low) & (f <= thresh_high)] = 50
+
+    # Apply adaptive thresholding to create a binary image with gray, black, and white regions
+    block_size = 21
+    c = 2
+    binary = cv2.adaptiveThreshold(filtered, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, \
+                                    cv2.THRESH_BINARY, block_size, c)
+    
+    # Perform Canny edge detection
+    cthresh_low = 40
+    cthresh_high = 70
+    edges = cv2.Canny(filtered, cthresh_low, cthresh_high)
+
+    fig, axs = plt.subplots(1, 2)
+
+    # Plot the images on the subplots
+    axs[0].imshow(I, cmap = 'gray')
+    # axs[1].imshow(filtered, cmap = 'gray')
+    axs[1].imshow(f, cmap = 'gray')
+    # axs[3].imshow(edges, cmap = 'gray')
+
+    axs[0].set_title('P{0} Img'.format(patient_idx))
+    #  axs[1].set_title('block = {0}, c = {1}'.format(block_size, c))
+    # axs[1].set_title('med blur = 25')
+    axs[1].set_title('thresh = {0}/{1}'.format(thresh_low, thresh_high))
+    # axs[3].set_title('canny {0}/{1}'.format(cthresh_low, cthresh_high))
+
+    for ax in axs.flat:
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    plt.show()
+
+
+''' Not Currently Using '''
+plot_seq_samples = False
 if plot_seq_samples == True:
     fig, axs = plt.subplots(1, int(len(I_seq)/2), figsize=(25, 25))
     axs[0].imshow(I_out, cmap = 'gray')
