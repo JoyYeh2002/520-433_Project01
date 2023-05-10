@@ -18,7 +18,7 @@ import numpy as np
 from helper_functions import pre_process
 
 # 0. Basic Control Panel
-patient_idx = 1
+patient_idx = 20
 heartbeat_state = 'ES'  # set to 'ED' or 'ES' to load the corresponding files
 folder_name = "data/patient" + str(patient_idx).zfill(4) + "/"
 display_markings = True
@@ -60,7 +60,7 @@ c2, _ = cv2.findContours(r2.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPRO
 c3, _ = cv2.findContours(r3.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # BLUE
 
 ''' Plot on top of original image '''
-plot_on_orig_img = True
+plot_on_orig_img = False
 if plot_on_orig_img == True:
     # Scale the intensity range of the grayscale image to 0-255
     I = cv2.normalize(I[0], None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
@@ -79,7 +79,7 @@ if plot_on_orig_img == True:
 I_out = pre_process(np.squeeze(img))
 I_out = cv2.normalize(I_out, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
 
-plot_on_img = True
+plot_on_img = False
 if plot_on_img == True:
     I_out = cv2.cvtColor(I_out, cv2.COLOR_GRAY2RGB)
 
@@ -115,6 +115,8 @@ with open(out_file_name, "wb") as f:
     pickle.dump(lines, f)
 
     pickle.dump(I, f) # Original Image
+    pickle.dump(I_gt, f) # the label
+    pickle.dump(r2, f) # the binary red contour (the most important one)
     pickle.dump(I_out, f) # Processed img
     pickle.dump(seq_out, f) # Processed seq
 

@@ -17,7 +17,6 @@ import SimpleITK as sitk
 import numpy as np
 import matplotlib.pylab as plt
 from skimage import exposure
-from skimage.filters import threshold_otsu
 import scipy.ndimage as ndi
 import cv2
 

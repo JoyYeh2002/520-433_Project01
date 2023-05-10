@@ -19,7 +19,7 @@ from helper_functions import pre_process
 
 # 0. Load the variables from the pickle file
 patient_idx = 1
-channel_number = 2
+channel_number = 4
 out_file_name = "outputs\pickles\patient{0:04d}_{1}_CH_evolution_variables.pkl".format(patient_idx, channel_number)
 
 with open(out_file_name, "rb") as f:
@@ -28,6 +28,9 @@ with open(out_file_name, "rb") as f:
     lines = pickle.load(f)
 
     I = pickle.load(f)
+    I_gt = pickle.load(f)
+    r2 = pickle.load(f) # the binary red contour (the most important one)
+    
     I_out = pickle.load(f)
     I_seq = pickle.load(f)
 
