@@ -11,12 +11,23 @@ Hannah Qu
 '''
 
 import pickle
+import math
 import SimpleITK as sitk
 import matplotlib.pylab as plt
 import cv2
 import numpy as np
 from helper_functions import pre_process
 from itertools import combinations
+
+
+# Load the .mhd file using SimpleITK
+image_2 = sitk.ReadImage("data\patient0020\patient0020_2CH_ES.mhd")
+image_4 = sitk.ReadImage("data\patient0020\patient0020_4CH_ES.mhd")
+
+# Get the pixel distance in each dimension
+pixel_spacing_2 = image_2.GetSpacing()
+pixel_spacing_4 = image_4.GetSpacing()
+
 
 # 0. Load the variables from the pickle file
 patient_idx = 20
@@ -97,9 +108,10 @@ if plot_mask_find_area == True:
     print("# Pixels in mask:", pixels_2, "pixels")
     print("# Pixels in mask:", pixels_4, "pixels")
 
-    conversion_factor = 1; #FIGURE THIS OUT
-    area_2 = pixels_2*conversion_factor # get area of LV
-    area_4 = pixels_4*conversion_factor # get area of LV
+    conversion_factor_2 = (pixel_spacing_2[0]*pixel_spacing_2[1])/(10); #FIGURE THIS OUT
+    conversion_factor_4 = (pixel_spacing_4[0]*pixel_spacing_4[1])/(10); #FIGURE THIS OUT
+    area_2 = pixels_2*conversion_factor_2 # get area of LV
+    area_4 = pixels_4*conversion_factor_4 # get area of LV
     print("Area of mask:", area_2, "cm^2")
     print("Area of mask:", area_4, "cm^2")
 
@@ -108,15 +120,14 @@ if plot_mask_find_area == True:
 
 
 current_max_2 = 0
+current_max_4 = 0
 max_a_2=  0
 max_b_2=  0
 max_a_4=  0
 max_b_4=  0
 
 for tup in c1_2: # iterate through tuple
-    #print("type", type(tup))
     c1_s_2 = np.squeeze(c1_2)
-    #print(c1_s)
     for i in c1_s_2:
         a = i[0]
         b = i[1]
@@ -125,14 +136,11 @@ for tup in c1_2: # iterate through tuple
             current_max_2 = current_distance
             max_a_2 = a
             max_b_2 = b
+current_max_2 = current_max_2*conversion_factor_2
 print(current_max_2)
 
-current_max_4 = 0
-
 for tup in c1_4: # iterate through tuple
-    #print("type", type(tup))
     c1_s_4 = np.squeeze(c1_4)
-    #print(c1_s)
     for i in c1_s_4:
         a = i[0]
         b = i[1]
@@ -141,9 +149,13 @@ for tup in c1_4: # iterate through tuple
             current_max_4 = current_distance
             max_a_4 = a
             max_b_4 = b
+current_max_4 = current_max_4*conversion_factor_4
 print(current_max_4)
 
-# Dodge Estimate: V = (math.pi*L/6) * (pi*area_2/pi*current_max_2)*(2*area_4/pi*current_max_4)
+L = current_max_2 if (current_max_2 > current_max_4) else current_max_4
+
+V = (math.pi*L/6) * (math.pi*area_2/math.pi*current_max_2)*(2*area_4/math.pi*current_max_4)
+print(V)
 
 plot_seq_samples = False
 if plot_seq_samples == True:
