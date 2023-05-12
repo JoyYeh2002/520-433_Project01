@@ -1,13 +1,13 @@
-'''
-EN.520.433 Medical Image Analysis
-Spring 2023
+# '''
+# EN.520.433 Medical Image Analysis
+# Spring 2023
 
-Step08: Input two contours and output 3d reconstruction using interpolation
+# Step08: Input two contours and output 3d reconstruction using interpolation
 
-Updated 05.12.2023
+# Updated 05.12.2023
 
-Hannah Qu
-'''
+# Hannah Qu
+# '''
 
 import pickle
 import math
@@ -19,6 +19,8 @@ from helper_functions import pre_process
 from itertools import combinations
 from scipy import interpolate
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.interpolate import griddata, make_interp_spline
+
 
 # 0. Load the variables from the pickle file
 patient_idx = 20
@@ -58,98 +60,88 @@ with open(out_file_name_4, "rb") as f:
     c2_4 = pickle.load(f)
     c3_4 = pickle.load(f)    
 
-# 1. Plots for sanity check
-# plot_on_img = True
-# if plot_on_img == True:
+# 2d plot of cross section view, a is x, b is y, AP is true if vertical long axis, false if horizontal long axis
+def plot_2d(a, b, AP): 
+    fig, ax = plt.subplots()
 
-    c1_2 = tuple(tuple(p) for p in np.squeeze(c1_2).tolist()) 
-    c1_2 = np.array(c1_2)
+    if AP: 
+        ax.plot(a, b, color="orange")
+        # ax.set_xlabel('y1')
+        # ax.set_ylabel('x')
+        ax.set_title('Vertical Long Axis (4 Chamber Cross Section View)')
+    else: 
+        ax.plot(a, b, color="blue")
+        # ax.set_xlabel('y2')
+        # ax.set_ylabel('z')
+        ax.set_title('Horizontal Long Axis (2 Chamber Cross Section View)')
 
-    c1_4 = tuple(tuple(p) for p in np.squeeze(c1_4).tolist()) 
-    c1_4 = np.array(c1_4)
-
-    fig = plt.figure()
+# 3d visualization of 2d cross section views, a1 b1 is 
+def plot_3d(fig, a1, b1, a2, b2):
+    # Plot the XY coordinates
     ax = fig.add_subplot(111, projection = '3d')
 
-    x = c1_2[:, 1]
-    y1 = c1_2[:, 0]
-    y2 = c1_4[:, 0]
-    z = c1_4[:, 1]
-
-    x = x - np.mean(x)
-    y1 = y1 - np.mean(y1)
-    centered_coords = np.column_stack((x, y1))
-
-    y2 = y2 - np.mean(y2)
-    z = z - np.mean(z)
-    centered_coords = np.column_stack((y2, z))
-
-
-    # fig, ax = plt.subplots()
-    # ax.plot(y2, z, color="blue")
-
-    # plt.show()
-
-    # Plot the XY coordinates
-    ax.plot(y1, x, zs=0, zdir='z', label='XY Plane')
+    ax.plot(a1, b1, zs=0, zdir='z', label='Horizontal Long Axis')
 
     # Plot the YZ coordinates
-    ax.plot(z, y2, zs=1, zdir='x', label='YZ Plane')
+    ax.plot(a2, b2, zs=1, zdir='x', label='Vertical Long Axis')
 
     # Set labels and title
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    ax.set_title('XY and YZ Planes')
-
-    # Set limits for each axis
-    # ax.set_xlim(-700, 700)
-    # ax.set_ylim(-700, 700)
-    # ax.set_zlim(0, 700)
+    ax.set_title('LAT and AP Cross Section Views')
 
     # Add a legend
     ax.legend()
 
-    # Display the plot
-    plt.show()
+# convert contour coordinate from tuple to list
+c1_2 = tuple(tuple(p) for p in np.squeeze(c1_2).tolist()) 
+c1_4 = tuple(tuple(p) for p in np.squeeze(c1_4).tolist()) 
+c1_2 = np.array(c1_2)
+c1_4 = np.array(c1_4)
 
-# Bspline interpolation code from chatgpt
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from scipy.interpolate import make_interp_spline
+# extract xy and yz values
+x = c1_2[:, 1] # vertical long axis y
+y1 = c1_2[:, 0] # vertical long axis x
+y2 = c1_4[:, 0] # horizontal long axis x
+z = c1_4[:, 1] # horizontal long axis y
 
-# # Example data
-# x1 = np.array([1, 2, 3, 4, 5])  # X values for graph 1
-# y1 = np.array([2, 4, 1, 6, 8])  # Y values for graph 1
+# center around 0
+x = x - np.mean(x) 
+y1 = y1 - np.mean(y1) 
+c1_2 = np.column_stack((x, y1))
+y2 = y2 - np.mean(y2) 
+z = z - np.mean(z) 
+c1_4 = np.column_stack((y2, z))
 
-# x2 = np.array([1, 2, 3, 4, 5])  # X values for graph 2
-# y2 = np.array([5, 3, 1, 2, 6])  # Y values for graph 2
+# only keep positive coordinates
+c1_2 = c1_2[c1_2[:, 0] > 0]
+c1_2 = c1_2[c1_2[:, 1] > 0]
+c1_4 = c1_4[c1_4[:, 0] > 0]
+c1_4 = c1_4[c1_4[:, 1] > 0]
+c1_2 = c1_2[c1_2[:, 0].argsort()]
+c1_4 = c1_4[c1_4[:, 0].argsort()]
 
-# # Perform B-spline interpolation
-# bspline1 = make_interp_spline(x1, y1)
-# bspline2 = make_interp_spline(x2, y2)
+# extract xy and yz positive
+x = c1_2[:, 0] # vertical long axis y
+y1 = c1_2[:, 1] # vertical long axis x
+y2 = c1_4[:, 0] # horizontal long axis x
+z = c1_4[:, 1] # horizontal long axis y
 
-# # Generate new X values for smooth curves
-# x_new = np.linspace(x1.min(), x1.max(), 500)
+# plotting
+plot_2d(y1, x, True) # plot vertical long axis
+plot_2d(y2, z, False) # plot horizontal long axis
+fig = plt.figure(3)
+plot_3d(fig, y2, z, x, y1)
+plt.show()
 
-# # Get the interpolated Y values for the new X values
-# y1_smooth = bspline1(x_new)
-# y2_smooth = bspline2(x_new)
 
-# # Create a figure and plot the interpolated curves
-# fig, ax = plt.subplots()
-# ax.plot(x_new, y1_smooth, label='Graph 1')
-# ax.plot(x_new, y2_smooth, label='Graph 2')
+# # Bspline interpolation code from chatgpt
+grid_x, grid_y, grid_z = np.meshgrid(np.linspace(min(x), max(x), num=100),
+                                     np.linspace(min(y1), max(y1), num=100),
+                                     np.linspace(min(z), max(z), num=100))
 
-# # Add the original data points
-# ax.scatter(x1, y1, color='red', label='Graph 1 Data')
-# ax.scatter(x2, y2, color='blue', label='Graph 2 Data')
+interp_xy = make_interp_spline(x, y1)
+interp_yz = make_interp_spline(y2, z)
 
-# # Set labels and title
-# ax.set_xlabel('X')
-# ax.set_ylabel('Y')
-# ax.set_title('B-spline Interpolation of Graphs')
-# ax.legend()
 
-# # Display the plot
-# plt.show()
