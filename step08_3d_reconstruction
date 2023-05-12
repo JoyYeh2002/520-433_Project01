@@ -76,10 +76,17 @@ with open(out_file_name_4, "rb") as f:
     y2 = c1_4[:, 0]
     z = c1_4[:, 1]
 
+    x = x - np.mean(x)
+    y1 = y1 - np.mean(y1)
+    centered_coords = np.column_stack((x, y1))
+
+    y2 = y2 - np.mean(y2)
+    z = z - np.mean(z)
+    centered_coords = np.column_stack((y2, z))
+
+
     # fig, ax = plt.subplots()
     # ax.plot(y2, z, color="blue")
-
-    # print(x)
 
     # plt.show()
 
@@ -96,9 +103,9 @@ with open(out_file_name_4, "rb") as f:
     ax.set_title('XY and YZ Planes')
 
     # Set limits for each axis
-    ax.set_xlim(-700, 700)
-    ax.set_ylim(-700, 700)
-    ax.set_zlim(0, 700)
+    # ax.set_xlim(-700, 700)
+    # ax.set_ylim(-700, 700)
+    # ax.set_zlim(0, 700)
 
     # Add a legend
     ax.legend()
