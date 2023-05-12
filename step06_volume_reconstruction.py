@@ -31,9 +31,8 @@ pixel_spacing_4 = image_4.GetSpacing()
 
 # 0. Load the variables from the pickle file
 patient_idx = 20
-channel_number = 4
+# channel_number = 4
 out_file_name_2 = "outputs\pickles\patient{0:04d}_{1}_CH_evolution_variables.pkl".format(patient_idx, 2)
-
 out_file_name_4 = "outputs\pickles\patient{0:04d}_{1}_CH_evolution_variables.pkl".format(patient_idx, 4)
 
 with open(out_file_name_2, "rb") as f:
@@ -82,8 +81,8 @@ if plot_on_img == True:
     cv2.drawContours(I_out_4, c1_4, -1, (0, 0, 255), linewidth) # red
 
     # Save the canvas with the contours in red
-    cv2.imwrite('outputs\snakes\patinet{0:04d}_{1}CH_contour_label.jpg'.format(patient_idx, channel_number), I_out_2)
-    cv2.imwrite('outputs\snakes\patinet{0:04d}_{1}CH_contour_label.jpg'.format(patient_idx, channel_number), I_out_4)
+    cv2.imwrite('outputs\snakes\patinet{0:04d}_{1}CH_contour_label.jpg'.format(patient_idx, 2), I_out_2)
+    cv2.imwrite('outputs\snakes\patinet{0:04d}_{1}CH_contour_label.jpg'.format(patient_idx, 4), I_out_4)
 
     # Display the canvas with the contour in red color
     cv2.imshow('Contour Image', I_out_2)
@@ -157,13 +156,13 @@ L = current_max_2 if (current_max_2 > current_max_4) else current_max_4
 V = (math.pi*L/6) * (math.pi*area_2/math.pi*current_max_2)*(2*area_4/math.pi*current_max_4)
 print(V)
 
-plot_seq_samples = False
-if plot_seq_samples == True:
-    fig, axs = plt.subplots(1, int(len(I_seq_2)/2), figsize=(25, 25))
-    axs[0].imshow(I_out_2, cmap = 'gray')
+# plot_seq_samples = False
+# if plot_seq_samples == True:
+#     fig, axs = plt.subplots(1, int(len(I_seq_2)/2), figsize=(25, 25))
+#     axs[0].imshow(I_out_2, cmap = 'gray')
 
-    for i in range(1, int(len(I_seq_2)/2)):
-        axs[i].imshow(I_seq_2[i], cmap='gray')
-        axs[i].axis('off')
+#     for i in range(1, int(len(I_seq_2)/2)):
+#         axs[i].imshow(I_seq_2[i], cmap='gray')
+#         axs[i].axis('off')
     
-    plt.show()
+#     plt.show()

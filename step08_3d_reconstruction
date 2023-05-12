@@ -1,0 +1,148 @@
+'''
+EN.520.433 Medical Image Analysis
+Spring 2023
+
+Step08: Input two contours and output 3d reconstruction using interpolation
+
+Updated 05.12.2023
+
+Hannah Qu
+'''
+
+import pickle
+import math
+import SimpleITK as sitk
+import matplotlib.pylab as plt
+import cv2
+import numpy as np
+from helper_functions import pre_process
+from itertools import combinations
+from scipy import interpolate
+from mpl_toolkits.mplot3d import Axes3D
+
+# 0. Load the variables from the pickle file
+patient_idx = 20
+# channel_number = 4
+out_file_name_2 = "outputs\pickles\patient{0:04d}_{1}_CH_evolution_variables.pkl".format(patient_idx, 2)
+out_file_name_4 = "outputs\pickles\patient{0:04d}_{1}_CH_evolution_variables.pkl".format(patient_idx, 4)
+
+with open(out_file_name_2, "rb") as f:
+    patient_idx_2 = pickle.load(f)
+    channel_number_2 = pickle.load(f)
+    lines_2 = pickle.load(f)
+
+    I_2 = pickle.load(f)
+    I_gt_2 = pickle.load(f)
+    r2_2 = pickle.load(f) # the binary red contour (the most important one)
+    
+    I_out_2 = pickle.load(f)
+    I_seq_2 = pickle.load(f)
+
+    c1_2 = pickle.load(f)
+    c2_2 = pickle.load(f)
+    c3_2 = pickle.load(f)
+
+with open(out_file_name_4, "rb") as f:
+    patient_idx_4 = pickle.load(f)
+    channel_number_4 = pickle.load(f)
+    lines_4 = pickle.load(f)
+
+    I_4 = pickle.load(f)
+    I_gt_4 = pickle.load(f)
+    r2_4 = pickle.load(f) # the binary red contour (the most important one)
+    
+    I_out_4 = pickle.load(f)
+    I_seq_4 = pickle.load(f)
+
+    c1_4 = pickle.load(f)
+    c2_4 = pickle.load(f)
+    c3_4 = pickle.load(f)    
+
+# 1. Plots for sanity check
+# plot_on_img = True
+# if plot_on_img == True:
+
+    c1_2 = tuple(tuple(p) for p in np.squeeze(c1_2).tolist()) 
+    c1_2 = np.array(c1_2)
+
+    c1_4 = tuple(tuple(p) for p in np.squeeze(c1_4).tolist()) 
+    c1_4 = np.array(c1_4)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection = '3d')
+
+    x = c1_2[:, 1]
+    y1 = c1_2[:, 0]
+    y2 = c1_4[:, 0]
+    z = c1_4[:, 1]
+
+    # fig, ax = plt.subplots()
+    # ax.plot(y2, z, color="blue")
+
+    # print(x)
+
+    # plt.show()
+
+    # Plot the XY coordinates
+    ax.plot(y1, x, zs=0, zdir='z', label='XY Plane')
+
+    # Plot the YZ coordinates
+    ax.plot(z, y2, zs=1, zdir='x', label='YZ Plane')
+
+    # Set labels and title
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title('XY and YZ Planes')
+
+    # Set limits for each axis
+    ax.set_xlim(-700, 700)
+    ax.set_ylim(-700, 700)
+    ax.set_zlim(0, 700)
+
+    # Add a legend
+    ax.legend()
+
+    # Display the plot
+    plt.show()
+
+# Bspline interpolation code from chatgpt
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from scipy.interpolate import make_interp_spline
+
+# # Example data
+# x1 = np.array([1, 2, 3, 4, 5])  # X values for graph 1
+# y1 = np.array([2, 4, 1, 6, 8])  # Y values for graph 1
+
+# x2 = np.array([1, 2, 3, 4, 5])  # X values for graph 2
+# y2 = np.array([5, 3, 1, 2, 6])  # Y values for graph 2
+
+# # Perform B-spline interpolation
+# bspline1 = make_interp_spline(x1, y1)
+# bspline2 = make_interp_spline(x2, y2)
+
+# # Generate new X values for smooth curves
+# x_new = np.linspace(x1.min(), x1.max(), 500)
+
+# # Get the interpolated Y values for the new X values
+# y1_smooth = bspline1(x_new)
+# y2_smooth = bspline2(x_new)
+
+# # Create a figure and plot the interpolated curves
+# fig, ax = plt.subplots()
+# ax.plot(x_new, y1_smooth, label='Graph 1')
+# ax.plot(x_new, y2_smooth, label='Graph 2')
+
+# # Add the original data points
+# ax.scatter(x1, y1, color='red', label='Graph 1 Data')
+# ax.scatter(x2, y2, color='blue', label='Graph 2 Data')
+
+# # Set labels and title
+# ax.set_xlabel('X')
+# ax.set_ylabel('Y')
+# ax.set_title('B-spline Interpolation of Graphs')
+# ax.legend()
+
+# # Display the plot
+# plt.show()
