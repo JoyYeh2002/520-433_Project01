@@ -10,16 +10,9 @@
 # '''
 
 import pickle
-import math
-import SimpleITK as sitk
 import matplotlib.pylab as plt
-import cv2
 import numpy as np
-from helper_functions import pre_process
-from itertools import combinations
-from scipy import interpolate
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import griddata, make_interp_spline
+import math
 
 
 # 0. Load the variables from the pickle file
@@ -60,39 +53,148 @@ with open(out_file_name_4, "rb") as f:
     c2_4 = pickle.load(f)
     c3_4 = pickle.load(f)    
 
-# 2d plot of cross section view, a is x, b is y, AP is true if vertical long axis, false if horizontal long axis
+# 2d plot of cross section view, a is x, b is y, AP is 1 if vertical long axis, 2 if horizontal long axis, 3 if ellipse contour
 def plot_2d(a, b, AP): 
     fig, ax = plt.subplots()
 
-    if AP: 
-        ax.plot(a, b, color="orange")
+    if AP == 1: 
+        ax.plot(a, b, color="red")
         # ax.set_xlabel('y1')
         # ax.set_ylabel('x')
         ax.set_title('Vertical Long Axis (4 Chamber Cross Section View)')
-    else: 
+    elif AP == 2: 
         ax.plot(a, b, color="blue")
         # ax.set_xlabel('y2')
         # ax.set_ylabel('z')
         ax.set_title('Horizontal Long Axis (2 Chamber Cross Section View)')
+    elif AP == 3: 
+        ax.plot(a, b, color = "black")
+        ax.set_title('Ellipse Contour')
 
 # 3d visualization of 2d cross section views, a1 b1 is 
-def plot_3d(fig, a1, b1, a2, b2):
-    # Plot the XY coordinates
-    ax = fig.add_subplot(111, projection = '3d')
-
-    ax.plot(a1, b1, zs=0, zdir='z', label='Horizontal Long Axis')
+def plot_3d(ax, a1, b1, a2, b2):
+    ax.plot(a1, b1, zs=0, zdir='z', label='LAT View', color = "blue")
 
     # Plot the YZ coordinates
-    ax.plot(a2, b2, zs=1, zdir='x', label='Vertical Long Axis')
+    ax.plot(a2, b2, zs=1, zdir='x', label='AP View', color = "orangered")
 
     # Set labels and title
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
     ax.set_title('LAT and AP Cross Section Views')
 
     # Add a legend
     ax.legend()
+
+def find_min_max(a1, a2):
+    a1_min = np.amin(a1)
+    a2_min = np.amin(a2)
+
+    a1_max = np.amax(a1)
+    a2_max = np.amax(a2)
+
+    min = a1_min if a1_min > a2_min else a2_min
+    max = a1_max if a1_max < a2_max else a2_max
+
+    return math.ceil(min)+1, math.floor(max)-1
+
+def get_ellipse_contour(vmin, vmax, hmin, hmax):
+    h = ((hmax - hmin)/2)+hmin
+    k = ((vmax - vmin)/2)+vmin
+    a = hmax - h
+    b = vmax - k
+
+    theta = np.linspace(0, 2*np.pi, 100)
+    x = h + a * np.cos(theta)
+    y = k + b * np.sin(theta)
+    ellipse_contour = np.column_stack((x, y))
+    return ellipse_contour
+
+def plot_ellipse(ax, x, y, z_plane):
+    ax.plot(x, [z_plane]*len(x), y, color = "plum")
+
+def y_occurrences(arr, val):
+    return arr[np.where(arr[:, 1] == val)]
+
+def linear_interpolation(arr, val, negative):
+    arr = arr[np.argsort(arr[:, 1])]
+    if negative: # return the point where y is negative
+        greater_values = arr[(arr[:, 1] > val) & (arr[:, 0] < 0)]
+        increment = greater_values[0] # i+1 (y, x or z)
+        y_increment = increment[0]
+        x_increment = increment[1]
+
+        lesser_values = arr[(arr[:, 1] < val) & (arr[:, 0] < 0)]
+        decrement = lesser_values[len(lesser_values)-1] # i-1 
+        y_decrement = decrement[0]
+        x_decrement = decrement[1]
+
+        return ((x_increment - val)/(x_increment - x_decrement))*(y_decrement) + ((val - x_decrement)/(x_increment - x_decrement))*(y_increment)
+
+
+    else: # return the point where y is positive
+        greater_values = arr[(arr[:, 1] > val) & (arr[:, 0] > 0)]
+        increment = greater_values[0] # i+1 (y, x or z)
+        y_increment = increment[0]
+        x_increment = increment[1]
+        
+        lesser_values = arr[(arr[:, 1] < val) & (arr[:, 0] > 0)]
+        decrement = lesser_values[len(lesser_values)-1] # i-1 
+        y_decrement = decrement[0]
+        x_decrement = decrement[1]
+
+        return ((x_increment - val)/(x_increment - x_decrement))*(y_decrement) + ((val - x_decrement)/(x_increment - x_decrement))*(y_increment)
+
+def get_ellipse_coordinates(LAT, AP, y_plane):
+    # LAT
+    # does not exist, linear interpolate both values
+    LAT = np.flip(LAT, 1)
+    if len(y_occurrences(LAT, y_plane)) == 0:
+        y2_left = linear_interpolation(LAT, y_plane, True) 
+        y2_right  = linear_interpolation(LAT, y_plane, False)
+
+    # one value exists, linearly interpolate the second
+    elif len(y_occurrences(LAT, y_plane)) == 1 and y_occurrences(LAT, y_plane)[0][:, 0] > 0:
+        y2_left = linear_interpolation(LAT, y_plane, True)
+        y2_right = y_occurrences(LAT, y_plane)[0][:, 0]
+    elif len(y_occurrences(LAT, y_plane)) == 1 and y_occurrences(LAT, y_plane)[0][:, 0] < 0:
+        y2_left = linear_interpolation(LAT, y_plane, False)
+        y2_right = y_occurrences(LAT, y_plane)[0][:, 0]
+
+    # two values exist, extract both
+    else: 
+        y_list = y_occurrences(LAT, y_plane)
+        y2_left = y_list[np.where(y_list[:, 1] < 0)][0]
+        y2_right = y_list[np.where(y_list[:, 1] > 0)][0]
+
+    # AP
+    # does not exist, linear interpolate both values
+    if len(y_occurrences(AP, y_plane)) == 0:
+        y1_lower= linear_interpolation(AP, y_plane, True)
+        y1_upper = linear_interpolation(AP, y_plane, False)
+    elif len(y_occurrences(AP, y_plane)) == 0:
+        y1_upper = linear_interpolation(AP, y_plane, False)
+        y1_lower = y_occurrences(AP, y_plane)[0][:, 0]
+
+    # one value exists, linearly interpolate the second
+    elif len(y_occurrences(AP, y_plane)) == 1 and y_occurrences(AP, y_plane)[0][:, 0] > 0:
+        y1_lower = linear_interpolation(AP, y_plane, True)
+        y1_upper = y_occurrences(AP, y_plane)[0][:, 0]
+
+    # two values exist, extract both
+    else: 
+        y_list = y_occurrences(AP, y_plane)
+        y1_lower = y_list[np.where(y_list[:, 1] < 0)][0]
+        y1_upper = y_list[np.where(y_list[:, 1] > 0)][0]
+
+    return y2_left, y2_right, y1_lower, y1_upper
+    
+
+def plot_interpolation(ax, min_y, max_y, LAT, AP): 
+    # iterate through y values from min to max
+    for i in range(min_y, max_y, 3):
+        # obtain 4 coordinates at specific y value 
+        hmin, hmax, vmin, vmax = get_ellipse_coordinates(LAT, AP, i)
+        contour = get_ellipse_contour(hmin, hmax, vmin, vmax)   
+        plot_ellipse(ax, contour[:, 0], contour[:, 1], i)
 
 # convert contour coordinate from tuple to list
 c1_2 = tuple(tuple(p) for p in np.squeeze(c1_2).tolist()) 
@@ -101,47 +203,63 @@ c1_2 = np.array(c1_2)
 c1_4 = np.array(c1_4)
 
 # extract xy and yz values
-x = c1_2[:, 1] # vertical long axis y
-y1 = c1_2[:, 0] # vertical long axis x
-y2 = c1_4[:, 0] # horizontal long axis x
-z = c1_4[:, 1] # horizontal long axis y
+x = c1_2[:, 1]*0.154 # vertical long axis y
+y1 = c1_2[:, 0]*0.308 # vertical long axis x
+y2 = c1_4[:, 0]*0.308 # horizontal long axis x
+z = c1_4[:, 1]*0.154 # horizontal long axis y
 
 # center around 0
-x = x - np.mean(x) 
-y1 = y1 - np.mean(y1) 
+x = (x - np.mean(x))
+y1 = y1 - np.mean(y1)
 c1_2 = np.column_stack((x, y1))
-y2 = y2 - np.mean(y2) 
-z = z - np.mean(z) 
+
+y2 = y2 - np.mean(y2)
+z = z - np.mean(z)
 c1_4 = np.column_stack((y2, z))
 
+
+
 # only keep positive coordinates
-c1_2 = c1_2[c1_2[:, 0] > 0]
-c1_2 = c1_2[c1_2[:, 1] > 0]
-c1_4 = c1_4[c1_4[:, 0] > 0]
-c1_4 = c1_4[c1_4[:, 1] > 0]
-c1_2 = c1_2[c1_2[:, 0].argsort()]
-c1_4 = c1_4[c1_4[:, 0].argsort()]
+# c1_2 = c1_2[c1_2[:, 0] > 0]
+# c1_2 = c1_2[c1_2[:, 1] > 0]
+# c1_4 = c1_4[c1_4[:, 0] > 0]
+# c1_4 = c1_4[c1_4[:, 1] > 0]
+# c1_2 = c1_2[c1_2[:, 0].argsort()]
+# c1_4 = c1_4[c1_4[:, 0].argsort()]
 
 # extract xy and yz positive
-x = c1_2[:, 0] # vertical long axis y
-y1 = c1_2[:, 1] # vertical long axis x
-y2 = c1_4[:, 0] # horizontal long axis x
-z = c1_4[:, 1] # horizontal long axis y
+# x = c1_2[:, 0] # vertical long axis y
+# y1 = c1_2[:, 1] # vertical long axis x
+# y2 = c1_4[:, 0] # horizontal long axis x
+# z = c1_4[:, 1] # horizontal long axis y
+
+# get max and min ranges for y 
+min_y, max_y = find_min_max(x, z)
 
 # plotting
-plot_2d(y1, x, True) # plot vertical long axis
-plot_2d(y2, z, False) # plot horizontal long axis
-fig = plt.figure(3)
-plot_3d(fig, y2, z, x, y1)
+plot_2d(y1, x, 1) # plot vertical long axis
+plot_2d(y2, z, 2) # plot horizontal long axis
+
+# test ellipse 2D plot
+# contour = get_ellipse_contour(-20, 10, -30, 50)
+# x_contour = contour[:, 0] 
+# y_contour = contour[:, 1] 
+# plot_2d(x_contour, y_contour, 3)
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.set_xlim3d(-50, 50) 
+ax.set_ylim3d(-50, 50) 
+ax.set_zlim3d(-50, 50)  
+plot_3d(ax, y2, z, x, y1)
+plot_interpolation(ax, min_y, max_y, c1_2, c1_4)
+ax.set_xlabel('Long-Axis Plane (mm)')
+ax.set_ylabel('Four-Chamber Plane (mm)')
+ax.set_zlabel('Short-Axis Plane (mm)') 
+
 plt.show()
 
 
-# # Bspline interpolation code from chatgpt
-grid_x, grid_y, grid_z = np.meshgrid(np.linspace(min(x), max(x), num=100),
-                                     np.linspace(min(y1), max(y1), num=100),
-                                     np.linspace(min(z), max(z), num=100))
 
-interp_xy = make_interp_spline(x, y1)
-interp_yz = make_interp_spline(y2, z)
 
 
